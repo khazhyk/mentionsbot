@@ -48,29 +48,8 @@ class TrackMentionsCog():
     # Listeners
     # ---------------------------------------------- #
 
-    async def _on_member_update(self, before, after):
-        if after.status in [discord.Status.online, discord.Status.offline]:
-            # If a user sent a precense update that showed they are online, they are active, clear out pending.
-            # If a user went from online immediately to offline, clear any pending messages - assume they were active.
-            await self._clear_pending_mentions(after)
-        elif after.status is discord.Status.idle and before.status != after.status:
-            # Dispatch any pending "they became idle" tasks
-            # Check and clear out *old* mentions (longer than 10 minutes ago), dispatch any remaining
-            await self._send_pending_mentions(after)
-
-    async def _on_message_edit(self, before, after):
-        """If a user edited thier message, they are active."""
-        await self._clear_pending_mentions(message.author)
-
-    async def _on_typing(self, channel, user, when):
-        """If a user is typing, they are active."""
-        await self._clear_pending_mentions(user)
-
     async def on_message(self, message):
         """Process a message."""
-        # if a user is sending messages, they are clearly active
-        #await self._clear_pending_mentions(message.author)
-
         if message.channel.is_private:
             return
 
@@ -104,47 +83,8 @@ class TrackMentionsCog():
                        mention.status is discord.Status.offline):
                         # In normal mode, send immediately if they are offline.
                         await self._send_mention(mention, message)
-                    elif mention != message.author:
-                        # Otherwise, if they are online, queue it in case they become idle
-                        # (I walk away from my computer, I was online but I wasn't actually active.)
-                        #await self._queue_pending_mention(mention, message)
-                        pass
-
 
         print(message.clean_content)
-
-    # ---------------------------------------------- #
-    # Pending management
-    # ---------------------------------------------- #
-
-    async def _send_pending_mentions(self, user: discord.User):
-        """Look through queued messages, remove any that belong to :user and sending those within the last 10 minutes."""
-        log.debug("Sending pending for {}".format(user))
-
-        ten_minutes_ago = datetime.datetime.utcnow() - datetime.timedelta(minutes=10)
-        async with self._pending_lock:
-            pending_mentions = self.pending.get(user.id, None)
-
-            if pending_mentions:
-                for mention in pending_mentions:
-                    if (mention.timestamp > ten_minutes_ago):
-                        await self._send_mention(mention)
-                del self.pending[user.id]
-
-    async def _clear_pending_mentions(self, user: discord.User):
-        """Look through queued messages, remove any belonging to :user without sending."""
-        log.debug("Clearing pending for {}".format(user))
-        async with self._pending_lock:
-            if user.id in self.pending:
-                del self.pending[user.id]
-
-    async def _queue_pending_mention(self, user: discord.User, message: discord.Message):
-        """User is currently online, remember this message in case they become idle."""
-        log.debug("Queueing pending for {}".format(user))
-        async with self._pending_lock:
-            pending_mentions = self.pending.get(user.id, [])
-            pending_mentions.append(message)
-            self.pending[user.id] = pending_mentions
 
     # ---------------------------------------------- #
     # Helpers
