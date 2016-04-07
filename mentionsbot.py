@@ -7,6 +7,7 @@ import os
 import io
 import signal
 import logging
+import asyncio
 
 
 class MentionsBot(Bot):
@@ -30,6 +31,28 @@ class MentionsBot(Bot):
         message = await self.say(content, *args, **kwargs)
         await asyncio.sleep(time)
         await self.delete_message(message)
+
+    async def dispatch_über_ready(self):
+        while True:
+            if self.do_not_dispatch_über_ready:
+                self.do_not_dispatch_über_ready = False
+                await asyncio.sleep(2)
+            self.dispatch("über_ready")
+            return
+
+    async def on_server_available(self, server):
+        self.do_not_dispatch_über_ready = True
+
+    async def on_ready(self):
+        """Start a task that will try to dispatch über_ready."""
+        self.do_not_dispatch_über_ready = True
+        asyncio.ensure_future(self.dispatch_über_ready())
+
+    async def on_über_ready(self):
+        """When servers have stopped loading."""
+        # Load up our stuff
+        print("über_ready")
+        self.load_extension("track_mentions")
 
 
 def bare_pms(bot, message):
@@ -68,8 +91,6 @@ def run():
 
     instance = MentionsBot(command_prefix=bare_pms)
     instance.remove_command("help")
-
-    instance.load_extension("track_mentions")
 
     instance.user = discord.User(name="Mentions", id="167340110243823616", discriminator="1294", avatar="c4acf304bb7dfd70661aa3ca219b0a50")
 

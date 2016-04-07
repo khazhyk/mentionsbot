@@ -43,11 +43,17 @@ ServerConfigTable = sa.Table('server_config', sa.MetaData(),
 
 
 class Configuration:
+    """Manages per server/per user configuration."""
     __slots__ = ["_cache", "engine"]
 
     def __init__(self, engine):
+        """Engine should be aiopg.sa engine."""
         self._cache = dict()
         self.engine = engine
+
+    # -------------------------------------------------- #
+    # Database Operations
+    # -------------------------------------------------- #
 
     async def _fetch_server(self, server: discord.Server):
         async with self.engine.acquire() as conn:
@@ -79,19 +85,26 @@ class Configuration:
             if res.rowcount == 0:
                 await conn.execute(UserConfigTable.insert().values(mentions_mode=user_config.mentions_mode.value, enabled=user_config.enabled.value, id=user.id))
 
+    # -------------------------------------------------- #
+    # Getting/updating configurations
+    # -------------------------------------------------- #
+
     async def get_server(self, server):
+        """Get a server config from the cache. Fetch from DB if needed."""
         if server.id not in self._cache:
             self._cache[server.id] = await self._fetch_server(server)
 
         return self._cache[server.id]
 
     async def get_user(self, user):
+        """Get a user config from the cache. Fetch from DB if needed."""
         if user.id not in self._cache:
             self._cache[user.id] = await self._fetch_user(user)
 
         return self._cache[user.id]
 
     async def update_server(self, server, **kwargs):
+        """Update server config in cache and database."""
         curr_config = await self.get_server(server)
 
         curr_config.enabled = kwargs.get('enabled', curr_config.enabled)
@@ -99,6 +112,7 @@ class Configuration:
         await self._upsert_server(server, curr_config)
 
     async def update_user(self, user, **kwargs):
+        """Update user config in cache and database."""
         curr_config = await self.get_user(user)
 
         curr_config.mentions_mode = kwargs.get('mentions_mode', curr_config.mentions_mode)

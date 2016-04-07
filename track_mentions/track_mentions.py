@@ -38,6 +38,8 @@ def check_permissions(**perms):
 
 
 class TrackMentionsCog():
+    control_channel_id = "131306265371607040"
+
     def __init__(self, bot, engine):
         self.bot = bot
         self.pending = {}
@@ -52,6 +54,11 @@ class TrackMentionsCog():
         """Process a message."""
         if message.channel.is_private:
             return
+
+        if (message.author == self.bot.user and
+                message.content.startswith("New instance starting up... Bugger off old instances! ") and
+                self.bot.nonce not in message.content):
+            await self.bot.logout()
 
         if len(message.mentions) == 0:
             return
