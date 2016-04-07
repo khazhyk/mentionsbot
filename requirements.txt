@@ -1,0 +1,4 @@
+git+https://github.com/khazhyk/discord.py@async
+aiohttp
+aiopg
+sqlalchemy
