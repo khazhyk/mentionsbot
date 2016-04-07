@@ -91,7 +91,7 @@ class TrackMentionsCog():
                         # In normal mode, send immediately if they are offline.
                         await self._send_mention(mention, message)
 
-        print(message.clean_content)
+        log.info(message.clean_content)
 
     # ---------------------------------------------- #
     # Helpers

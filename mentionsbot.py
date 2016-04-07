@@ -71,13 +71,13 @@ def run():
             errors="backslashreplace", line_buffering=True)
 
     if hasattr(os, 'getpgrp'):
-        f = open('spoo.pgid', 'w')
+        f = open('mentionsbot.pgid', 'w')
         f.write(str(os.getpgrp()))
         f.close()
 
     def signal_handler(singal, frame):
         del singal, frame
-        f = open('spoo.pid', 'w')
+        f = open('mentionsbot.pid', 'w')
         f.close()
         print("Got signal, killing everything")
         os._exit(0)  # kill everyone
@@ -91,8 +91,6 @@ def run():
 
     instance = MentionsBot(command_prefix=bare_pms)
     instance.remove_command("help")
-
-    instance.user = discord.User(name="Mentions", id="167340110243823616", discriminator="1294", avatar="c4acf304bb7dfd70661aa3ca219b0a50")
 
     instance.run('token', config.token)
 
