@@ -1,4 +1,4 @@
-git+https://github.com/khazhyk/discord.py@async
+git+https://github.com/khazhyk/discord.py@token
 aiohttp
 aiopg
 sqlalchemy

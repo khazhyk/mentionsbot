@@ -57,7 +57,7 @@ class TrackMentionsCog():
 
         if (message.author == self.bot.user and
                 message.content.startswith("New instance starting up... Bugger off old instances! ") and
-                self.bot.nonce not in message.content):
+                self.nonce not in message.content):
             await self.bot.logout()
 
         if len(message.mentions) == 0:
@@ -77,7 +77,7 @@ class TrackMentionsCog():
             # Tri-bool per user - enabled, disabled, default
             user_enabled = await self._user_enabled(mention, default=server_enabled)
 
-            if user_enabled:
+            if user_enabled is MentionsEnabled.Enabled:
                 user_mode = await self._user_mode(mention)
 
                 # Now, based on usermode and user status, either dispatch an update, queue a possible update, or discard
@@ -108,8 +108,11 @@ class TrackMentionsCog():
     async def _server_enabled(self, server: discord.Server):
         return (await self.configuration.get_server(server)).enabled
 
-    async def _user_enabled(self, user: discord.User, default: bool):
-        return (await self.configuration.get_user(user)).enabled
+    async def _user_enabled(self, user: discord.User, default: MentionsEnabled):
+        user_enabled = (await self.configuration.get_user(user)).enabled
+        if user_enabled is MentionsEnabled.Default:
+            return default
+        return user_enabled
 
     async def _user_mode(self, user: discord.User):
         return (await self.configuration.get_user(user)).mentions_mode
